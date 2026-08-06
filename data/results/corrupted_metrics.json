@@ -1,0 +1,6 @@
+{
+  "num_questions": 10,
+  "retrieval_hit_rate": 0.9,
+  "mean_token_f1": 0.9087,
+  "mean_latency_ms": 58
+}

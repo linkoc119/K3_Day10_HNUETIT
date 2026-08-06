@@ -1,0 +1,8 @@
+{
+  "status": "FAIL",
+  "reasons": [
+    "Found 1 duplicate paper_id values.",
+    "doi column not present, paper_id represents DOI."
+  ],
+  "reason": "Found 1 duplicate paper_id values.; doi column not present, paper_id represents DOI."
+}

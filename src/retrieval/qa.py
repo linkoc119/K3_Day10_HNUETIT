@@ -20,13 +20,25 @@ class AnswerResult:
 def _extract_answer(question: str, top_result: SearchResult) -> str:
     lowered = question.lower()
     metadata = top_result.metadata
-    if "who authored" in lowered or "list the authors" in lowered:
-        return metadata["authors_joined"]
-    if "when was" in lowered or "publication date" in lowered or "published on" in lowered:
-        return metadata["published"]
-    if "what categories" in lowered:
-        return metadata["categories_joined"]
-    return first_sentence(metadata["summary"])
+    
+    # 1. Authors
+    if any(kw in lowered for kw in ["tác giả", "tác giả là ai", "who authored", "list the authors"]):
+        return metadata.get("authors_joined", "")
+        
+    # 2. Publication Date
+    if any(kw in lowered for kw in ["xuất bản khi nào", "xuất bản vào lúc nào", "when was", "publication date", "published on"]):
+        return metadata.get("published", "")
+        
+    # 3. Categories / Field
+    if any(kw in lowered for kw in ["thuộc lĩnh vực nào", "lĩnh vực nào", "what categories", "category", "subject"]):
+        return metadata.get("categories_joined", "") or metadata.get("primary_category", "")
+        
+    # 4. Journal / Conference (comment)
+    if any(kw in lowered for kw in ["tạp chí nào", "đăng trên tạp chí nào", "journal", "published in", "where was it published"]):
+        return metadata.get("comment", "")
+        
+    # Default to first sentence of summary
+    return first_sentence(metadata.get("summary", ""))
 
 
 def answer_question(question: str, settings: Settings, index: LocalEmbeddingIndex, top_k: int | None = None) -> AnswerResult:

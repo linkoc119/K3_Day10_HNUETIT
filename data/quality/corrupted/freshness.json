@@ -1,0 +1,7 @@
+{
+  "status": "FAIL",
+  "reasons": [
+    "Found 1 records older than freshness threshold of 180 days."
+  ],
+  "reason": "Found 1 records older than freshness threshold of 180 days."
+}

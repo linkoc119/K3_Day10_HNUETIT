@@ -53,6 +53,7 @@ class LocalEmbeddingIndex:
                     "content": row["text_for_embedding"],
                     "metadata": {
                         "paper_id": row["paper_id"],
+                        "doi": row["paper_id"],
                         "title": row["title"],
                         "published": row["published"],
                         "authors_joined": row["authors_joined"],
@@ -60,6 +61,7 @@ class LocalEmbeddingIndex:
                         "summary": row["summary"],
                         "abs_url": row["abs_url"],
                         "pdf_url": row["pdf_url"],
+                        "comment": row.get("comment", ""),
                     },
                 }
             )

@@ -1,0 +1,18 @@
+[
+  {
+    "paper_id": "10.36227/techrxiv.177272838.89432844/v1",
+    "corruption": "duplicate"
+  },
+  {
+    "paper_id": "10.2196/preprints.106157",
+    "corruption": "stale_date"
+  },
+  {
+    "paper_id": "10.2118/234689-pa",
+    "corruption": "blank_summary"
+  },
+  {
+    "paper_id": "10.20944/preprints202602.0996.v1",
+    "corruption": "add_noise"
+  }
+]

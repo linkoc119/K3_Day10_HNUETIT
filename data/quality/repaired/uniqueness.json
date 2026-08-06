@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "reasons": [
+    "doi column not present, paper_id represents DOI.",
+    "All paper_ids (and DOIs if present) are unique."
+  ],
+  "reason": "doi column not present, paper_id represents DOI.; All paper_ids (and DOIs if present) are unique."
+}

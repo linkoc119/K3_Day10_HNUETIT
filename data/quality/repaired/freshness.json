@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "reasons": [
+    "All published dates are valid, age_days values are >= 0, and no stale records found."
+  ],
+  "reason": "All published dates are valid, age_days values are >= 0, and no stale records found."
+}

@@ -143,3 +143,57 @@ def evaluate_pipeline(
     write_json(metrics_output_path, summary)
     write_json(answers_output_path, answers)
     return bundle
+
+
+def calculate_token_f1(reference: str, prediction: str) -> float:
+    import re
+    ref = reference.lower()
+    pred = prediction.lower()
+    ref = re.sub(r'[^\w\s]', ' ', ref)
+    pred = re.sub(r'[^\w\s]', ' ', pred)
+    ref_tokens = ref.split()
+    pred_tokens = pred.split()
+    
+    if not ref_tokens or not pred_tokens:
+        return 0.0
+        
+    ref_set = set(ref_tokens)
+    pred_set = set(pred_tokens)
+    overlap = len(ref_set & pred_set)
+    if overlap == 0:
+        return 0.0
+        
+    precision = overlap / len(pred_set)
+    recall = overlap / len(ref_set)
+    return 2 * precision * recall / (precision + recall)
+
+
+class LLMJudge:
+    @staticmethod
+    def evaluate(settings: Settings, question: str, reference: str, prediction: str) -> str:
+        prompt = f"""
+Evaluate the model prediction against the reference answer for the given question.
+
+Question: {question}
+Reference Answer: {reference}
+Model Prediction: {prediction}
+
+Return only one of the following words: "Correct", "Partially Correct", or "Incorrect". Do not include any other text or reasoning.
+""".strip()
+        try:
+            llm = build_llm(settings=settings, temperature=0.0)
+            response = llm.invoke(prompt)
+            verdict = getattr(response, "content", str(response)).strip()
+            for option in ["Correct", "Partially Correct", "Incorrect"]:
+                if option.lower() in verdict.lower():
+                    return option
+            return "Incorrect"
+        except Exception:
+            f1 = calculate_token_f1(reference, prediction)
+            if f1 >= 0.9:
+                return "Correct"
+            elif f1 >= 0.3:
+                return "Partially Correct"
+            else:
+                return "Incorrect"
+
