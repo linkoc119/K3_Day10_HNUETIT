@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from statistics import mean
 import os
@@ -16,6 +17,8 @@ from retrieval.embeddings import MiniLMEmbeddings
 from retrieval.index import LocalEmbeddingIndex
 from retrieval.llm import build_llm
 from retrieval.qa import answer_question
+
+logger = logging.getLogger(__name__)
 
 
 class JudgeVerdict(BaseModel):
@@ -196,4 +199,149 @@ Return only one of the following words: "Correct", "Partially Correct", or "Inco
                 return "Partially Correct"
             else:
                 return "Incorrect"
+
+    @staticmethod
+    def score_from_verdict(verdict: str) -> int:
+        if verdict == "Correct":
+            return 5
+        if verdict == "Partially Correct":
+            return 3
+        return 1
+
+    @staticmethod
+    def is_correct(verdict: str) -> bool:
+        return verdict == "Correct"
+
+
+def run_qa_evaluation(
+    settings: Settings,
+    index: "LocalEmbeddingIndex",
+    test_set: list[dict[str, Any]],
+    indexed_paper_ids: set[str] | None = None,
+    use_llm_judge: bool = True,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Run the frozen evaluation set against an index.
+
+    Always computes retrieval_hit_rate, mean_token_f1, mean_latency_ms,
+    judge_accuracy, mean_judge_score. The judge is either an LLM call or a
+    deterministic token-F1 heuristic fallback.
+
+    Returns (answers, metrics).
+    """
+    from retrieval.qa import answer_question
+    import time as _time
+
+    if indexed_paper_ids is None:
+        indexed_paper_ids = {doc["paper_id"].lower() for doc in index.documents}
+
+    answers: list[dict[str, Any]] = []
+    hits = 0
+    total_token_f1 = 0.0
+    total_latency_ms = 0.0
+    judge_correct_count = 0
+    judge_partial_count = 0
+    judge_incorrect_count = 0
+    judge_total_count = 0
+    judge_score_sum = 0
+    judge_failed = 0
+
+    for sample in test_set:
+        q_id = sample.get("id", "unknown")
+        question = sample.get("question", "")
+        ground_truth = sample.get("ground_truth", "")
+        gt_doc_ids = sample.get("ground_truth_doc_ids", [])
+
+        gt_present = any(gt_id.lower() in indexed_paper_ids for gt_id in gt_doc_ids)
+        if not gt_present:
+            logger.warning("MISS: Ground truth doc IDs %s for question %s are not in the index.", gt_doc_ids, q_id)
+
+        start_time = _time.perf_counter()
+        try:
+            result = answer_question(question, settings, index)
+            latency_ms = int((_time.perf_counter() - start_time) * 1000)
+            prediction = result.answer
+            retrieved_ids = result.retrieved_doc_ids
+        except Exception as exc:
+            logger.error("Error evaluating %s: %s", q_id, exc)
+            latency_ms = int((_time.perf_counter() - start_time) * 1000)
+            prediction = ""
+            retrieved_ids = []
+            judge_failed += 1
+
+        hit = False
+        if gt_present:
+            hit = len(set(gt_doc_ids) & set(retrieved_ids)) > 0
+        if hit:
+            hits += 1
+
+        f1 = calculate_token_f1(ground_truth, prediction)
+        total_token_f1 += f1
+        total_latency_ms += latency_ms
+
+        if use_llm_judge:
+            judge_verdict = LLMJudge.evaluate(settings, question, ground_truth, prediction)
+        else:
+            if f1 >= 0.9:
+                judge_verdict = "Correct"
+            elif f1 >= 0.3:
+                judge_verdict = "Partially Correct"
+            else:
+                judge_verdict = "Incorrect"
+        judge_numeric_score = LLMJudge.score_from_verdict(judge_verdict)
+
+        if prediction:
+            judge_total_count += 1
+            judge_score_sum += judge_numeric_score
+            if judge_verdict == "Correct":
+                judge_correct_count += 1
+            elif judge_verdict == "Partially Correct":
+                judge_partial_count += 1
+            else:
+                judge_incorrect_count += 1
+
+        answer_item = {
+            "question_id": q_id,
+            "question": question,
+            "prediction": prediction,
+            "ground_truth": ground_truth,
+            "retrieved_doc_ids": retrieved_ids,
+            "hit": hit,
+            "token_f1": round(f1, 4),
+            "latency_ms": latency_ms,
+            "judge": judge_verdict,
+            "judge_score": judge_numeric_score,
+        }
+        if not gt_present:
+            answer_item["index_status"] = "MISS"
+        answers.append(answer_item)
+
+    num_questions = len(answers)
+    retrieval_hit_rate = hits / num_questions if num_questions > 0 else 0.0
+    mean_token_f1 = total_token_f1 / num_questions if num_questions > 0 else 0.0
+    mean_latency_ms = total_latency_ms / num_questions if num_questions > 0 else 0.0
+    judge_accuracy = (
+        judge_correct_count / judge_total_count if judge_total_count > 0 else 0.0
+    )
+    mean_judge_score = (
+        judge_score_sum / judge_total_count if judge_total_count > 0 else 0.0
+    )
+
+    metrics = {
+        "num_questions": num_questions,
+        "retrieval_hit_rate": round(retrieval_hit_rate, 4),
+        "mean_token_f1": round(mean_token_f1, 4),
+        "mean_latency_ms": int(mean_latency_ms),
+        "judge_accuracy": round(judge_accuracy, 4),
+        "mean_judge_score": round(mean_judge_score, 4),
+        "judge_total": judge_total_count,
+        "judge_correct": judge_correct_count,
+        "judge_partial": judge_partial_count,
+        "judge_incorrect": judge_incorrect_count,
+        "judge_failed": judge_failed,
+        "judge_backend": "llm" if use_llm_judge else "heuristic",
+        "correct_rate": round(judge_correct_count / judge_total_count, 4) if judge_total_count > 0 else 0.0,
+        "partial_rate": round(judge_partial_count / judge_total_count, 4) if judge_total_count > 0 else 0.0,
+        "incorrect_rate": round(judge_incorrect_count / judge_total_count, 4) if judge_total_count > 0 else 0.0,
+    }
+    return answers, metrics
 

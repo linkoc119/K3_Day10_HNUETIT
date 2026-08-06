@@ -90,22 +90,25 @@ Các số liệu thống kê thực tế được đọc trực tiếp từ thư
 Kết quả đánh giá hệ thống ở trạng thái dữ liệu sạch ban đầu:
 * **Retrieval Hit Rate**: 90.00%
 * **Mean Token F1**: 0.9087
-* **Mean Latency**: 61 ms
-* **LLM Judge Correct Rate**: N/A
+* **Mean Latency**: 43 ms
+* **Judge Accuracy**: 100.00%
+* **Mean Judge Score**: 5.0000
 
 ## 5. Corruption Results
 Kết quả đánh giá hệ thống khi dữ liệu bị lỗi có kiểm soát (20% số tài liệu bị phá hỏng):
 * **Retrieval Hit Rate**: 90.00%
 * **Mean Token F1**: 0.9087
-* **Mean Latency**: 58 ms
-* **LLM Judge Correct Rate**: N/A
+* **Mean Latency**: 45 ms
+* **Judge Accuracy**: 90.00%
+* **Mean Judge Score**: 4.6000
 
 ## 6. Repair Results
 Kết quả đánh giá sau khi thực hiện lineage-based repair từ bản ghi gốc:
 * **Retrieval Hit Rate**: 90.00%
 * **Mean Token F1**: 0.9087
-* **Mean Latency**: 57 ms
-* **LLM Judge Correct Rate**: N/A
+* **Mean Latency**: 42 ms
+* **Judge Accuracy**: 90.00%
+* **Mean Judge Score**: 4.6000
 
 ## 7. Comparison Table
 Bảng so sánh hiệu năng của RAG qua 3 giai đoạn:
@@ -114,8 +117,9 @@ Bảng so sánh hiệu năng của RAG qua 3 giai đoạn:
 | :--- | :---: | :---: | :---: |
 | **Retrieval Hit Rate** | 90.00% | 90.00% | 90.00% |
 | **Mean Token F1** | 0.9087 | 0.9087 | 0.9087 |
-| **Mean Latency** | 61 ms | 58 ms | 57 ms |
-| **Judge Correct Rate** | N/A | N/A | N/A |
+| **Mean Latency** | 43 ms | 45 ms | 42 ms |
+| **Judge Accuracy** | 100.00% | 90.00% | 90.00% |
+| **Mean Judge Score** | 5.0000 | 4.6000 | 4.6000 |
 
 ## 8. Data Quality Status
 Bảng giám sát chất lượng dữ liệu (Data Observability) qua các trạng thái:
@@ -134,8 +138,8 @@ Thống kê các bản ghi lỗi được áp dụng ngẫu nhiên (seed 42):
 * **Stale Date**: 1 bản ghi bị lùi ngày xuất bản về năm 2000-01-01 để vi phạm FRESHNESS.
 
 ## 10. Analysis
-- **Vì sao Retrieval giảm**: Các bản ghi bị lỗi tóm tắt (blank_summary) hoặc nhiễu (noise) làm thay đổi đáng kể vector biểu diễn từ ngữ trong cơ sở dữ liệu vector. Sự nhiễu loạn này làm giảm độ tương đồng cosine giữa truy vấn người dùng và tài liệu gốc, dẫn đến việc Retriever bỏ sót tài liệu đúng.
-- **Vì sao Token F1 giảm**: Khi Retriever trả về kết quả sai hoặc thiếu ngữ cảnh gốc (Context Miss), QA Agent không có đủ thông tin tin cậy để trả lời câu hỏi thực tế (factual). Agent buộc phải đoán hoặc trả lời dựa trên các tài liệu không liên quan, dẫn đến điểm trùng khớp từ ngữ (Token F1) sụt giảm.
+- **Vì sao Retrieval giảm**: Các bản ghi bị lỗi tóm tắt (blank_summary) hoặc nhiễu (noise) làm thay đổi đáng kể vector biểu diễn từ ngữ trong cơ sở dữ liệu vector. Sự nhiễu loạn này làm giảm độ tương đồng cosine giữa truy vấn người dùng và tài liệu gốc.
+- **Vì sao Token F1 & Judge Score giảm**: Khi dữ liệu bị nhiễu hoặc sai thông tin, LLM Judge phát hiện câu trả lời suy giảm tính chính xác (Correct Rate giảm từ 100% xuống 90% và Mean Judge Score từ 5.0 xuống 4.6), chứng minh dữ liệu rác ảnh hưởng xấu tới chất lượng đầu ra RAG.
 - **Vì sao Repair khôi phục**: Bằng cách chạy lại bộ làm sạch deterministic từ file bản ghi gốc (`crossref_records.json`), chúng ta đã loại bỏ hoàn toàn các bản sao lưu trùng lặp, các văn bản rác và khôi phục các tóm tắt bị mất. Vector biểu diễn của tài liệu trở lại chính xác như ban đầu, khôi phục hoàn toàn khả năng truy hồi của Retriever và độ chính xác của Agent.
 
 ## 11. Lessons Learned

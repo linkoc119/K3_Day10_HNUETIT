@@ -2,5 +2,16 @@
   "num_questions": 10,
   "retrieval_hit_rate": 0.9,
   "mean_token_f1": 0.9087,
-  "mean_latency_ms": 58
+  "mean_latency_ms": 45,
+  "judge_accuracy": 0.9,
+  "mean_judge_score": 4.6,
+  "judge_total": 10,
+  "judge_correct": 9,
+  "judge_partial": 0,
+  "judge_incorrect": 1,
+  "judge_failed": 0,
+  "judge_backend": "llm",
+  "correct_rate": 0.9,
+  "partial_rate": 0.0,
+  "incorrect_rate": 0.1
 }

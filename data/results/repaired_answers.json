@@ -12,7 +12,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 62
+    "latency_ms": 66,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q2",
@@ -27,7 +29,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 59
+    "latency_ms": 52,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q3",
@@ -42,7 +46,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 46
+    "latency_ms": 41,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q4",
@@ -57,7 +63,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 50
+    "latency_ms": 38,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q5",
@@ -72,7 +80,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 50
+    "latency_ms": 35,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q6",
@@ -87,7 +97,9 @@
     ],
     "hit": false,
     "token_f1": 0.087,
-    "latency_ms": 42
+    "latency_ms": 36,
+    "judge": "Incorrect",
+    "judge_score": 1
   },
   {
     "question_id": "q7",
@@ -102,7 +114,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 77
+    "latency_ms": 28,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q8",
@@ -117,7 +131,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 45
+    "latency_ms": 39,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q9",
@@ -132,7 +148,9 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 94
+    "latency_ms": 62,
+    "judge": "Correct",
+    "judge_score": 5
   },
   {
     "question_id": "q10",
@@ -147,6 +165,8 @@
     ],
     "hit": true,
     "token_f1": 1.0,
-    "latency_ms": 51
+    "latency_ms": 32,
+    "judge": "Correct",
+    "judge_score": 5
   }
 ]

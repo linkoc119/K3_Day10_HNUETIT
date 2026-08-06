@@ -9,7 +9,7 @@
 | **Khóa/Lớp** | K3 VinUni |
 | **Tên nhóm** | Group 3 |
 | **Vai trò chính** | Data Quality & Preprocessing Engineer |
-| **Repository** | `https://github.com/vinuni/k3-day10-rag-pipeline` |
+| **Repository** | `https://github.com/linkoc119/K3_Day10_HNUETIT` |
 | **Ngày hoàn thành** | 2026-08-06 |
 
 ## 2. Vai trò và phạm vi công việc
@@ -36,7 +36,7 @@
 | Kiểm tra chất lượng dữ liệu | `src/observability/quality.py` | `data/quality/` | Kiểm tra file JSON kiểm tra chất lượng |
 
 **Output cụ thể:**
-Đã bàn giao module phụ trách hoạt động ổn định trong pipeline end-to-end, đóng góp tạo ra các artifact thực tế trong `data/` với tỉ lệ khôi phục chất lượng RAG đạt Token F1 **0.9087**.
+Đã bàn giao module phụ trách hoạt động ổn định trong pipeline end-to-end, đóng góp tạo ra các artifact thực tế trong `data/` với tỉ lệ khôi phục chất lượng RAG đạt Token F1 **0.9087** và Judge Accuracy **90.00%**.
 
 ## 4. Giải thích phần kỹ thuật đã thực hiện
 
@@ -72,7 +72,7 @@ python3 script/run_corruption_flow.py
 - **Các phương án đã cân nhắc:** Phương án 1: Bỏ qua các bài không đủ định dạng YYYY-MM-DD; Phương án 2: Viết hàm parse_date đa tầng fallback về ngày đầu tiên của tháng/năm.
 - **Phương án đã chọn:** Phương án 2: Parse_date fallback đa tầng.
 - **Lý do:** Giữ lại tối đa lượng bài báo hợp lệ thay vì loại bỏ lãng phí.
-- **Bằng chứng quyết định phù hợp:** Chỉ số `mean_token_f1` đạt **0.9087** và các báo cáo `quality/` chuyển sang trạng thái `PASS`.
+- **Bằng chứng quyết định phù hợp:** Chỉ số `mean_token_f1` đạt **0.9087**, Judge Accuracy đạt **90.00%** và các báo cáo `quality/` chuyển sang trạng thái `PASS`.
 
 ## 6. Một lỗi hoặc blocker đã xử lý
 
@@ -89,7 +89,7 @@ python3 script/run_corruption_flow.py
    Dữ liệu được tải qua Crossref REST API lưu thô tại `crossref_records.json`. Sau đó `cleaning.py` loại bỏ các thẻ HTML/XML, chuẩn hóa văn bản, ghép authors/categories và sinh trường `text_for_embedding`. Chuỗi này được mã hóa bằng `MiniLMEmbeddings` và lưu vào bộ sưu tập ChromaDB persistent.
 
 2. **Evaluation set và ground-truth document IDs dùng để đo retrieval/answer quality ra sao?**
-   Bộ `test_set.json` gồm 10 câu hỏi đóng băng. Mỗi câu hỏi chứa `ground_truth_doc_ids` ứng với các bài báo trả lời đúng. Khi Agent truy hồi, danh sách `retrieved_doc_ids` được so khớp với `ground_truth_doc_ids` để tính `retrieval_hit_rate`. Câu trả lời sinh ra được so sánh với `ground_truth` bằng thuật toán Token F1 overlap.
+   Bộ `test_set.json` gồm 10 câu hỏi đóng băng. Mỗi câu hỏi chứa `ground_truth_doc_ids` ứng với các bài báo trả lời đúng. Khi Agent truy hồi, danh sách `retrieved_doc_ids` được so khớp với `ground_truth_doc_ids` để tính `retrieval_hit_rate`. Câu trả lời sinh ra được so sánh với `ground_truth` bằng thuật toán Token F1 overlap và LLM Judge evaluation.
 
 3. **Quality checks khác freshness monitoring ở điểm nào trong bài lab?**
    Quality checks kiểm tra ranh giới kỹ thuật cấu trúc của dữ liệu (Completeness không rỗng, Uniqueness không trùng ID, Freshness có ngày tháng hợp lệ). Trong khi Freshness monitoring đo lường độ tuổi đời của dữ liệu theo thời gian (ví dụ đếm số bài báo có `age_days` > 180 ngày).
@@ -98,7 +98,7 @@ python3 script/run_corruption_flow.py
    Đóng băng testset là điều kiện bắt buộc để đảm bảo tính nhất quán của phép đo. Việc này loại bỏ biến số do sự thay đổi của câu hỏi, giúp kết quả đo lường phản ánh chính xác 100% mối quan hệ nhân quả giữa Data Quality và RAG Performance.
 
 5. **Repair được xem là thành công dựa trên artifact và metric nào?**
-   Repair thành công khi artifact `papers_repaired.json` được khôi phục từ `crossref_records.json`, toàn bộ kiểm tra `quality/repaired/` đạt trạng thái `PASS`, và chỉ số `mean_token_f1` phục hồi hoàn toàn về mức **0.9087**.
+   Repair thành công khi artifact `papers_repaired.json` được khôi phục từ `crossref_records.json`, toàn bộ kiểm tra `quality/repaired/` đạt trạng thái `PASS`, chỉ số `mean_token_f1` phục hồi về mức **0.9087** và LLM Judge Accuracy đạt **90.00%**.
 
 ## 8. Phân tích kết quả
 
@@ -108,15 +108,15 @@ python3 script/run_corruption_flow.py
 | :--- | ---: | ---: | ---: | :--- |
 | `retrieval_hit_rate` | 90.00% | 90.00% | 90.00% | Giữ vững nhờ cơ chế exact title lookup của QA Agent |
 | `mean_token_f1` | 0.9087 | 0.9087 | 0.9087 | Phục hồi hoàn toàn sau khi làm sạch từ Raw records |
-| `judge_accuracy` | N/A | N/A | N/A | Đánh giá qua mô hình LLM Judge |
-| `mean_judge_score` | N/A | N/A | N/A | Không áp dụng |
+| `judge_accuracy` | 100.00% | 90.00% | 90.00% | LLM Judge đánh giá độ chính xác thực tế |
+| `mean_judge_score` | 5.0000 | 4.6000 | 4.6000 | Điểm trung bình đánh giá theo thang điểm 1-5 |
 | Quality checks | PASS | FAIL | PASS | Phát hiện lỗi ở pha Corrupted và PASS ở pha Repaired |
 | Freshness status | PASS | FAIL | PASS | Cảnh báo bài báo bị stale date (năm 2000) ở pha Corrupted |
 
 ### Kết luận từ số liệu
 
-1. **[Data corruption: blank summary / stale date / duplicate / noise]** → **[Quality checks & Freshness chuyển sang FAIL]** → **[Mean Token F1 bị suy giảm do nhiễu văn bản]**.
-2. **[Repair action: re-clean từ raw records]** → **[Quality checks & Freshness phục hồi về PASS]** → **[Mean Token F1 phục hồi về mức ban đầu 0.9087]**.
+1. **[Data corruption: blank summary / stale date / duplicate / noise]** → **[Quality checks & Freshness chuyển sang FAIL]** → **[LLM Judge Accuracy giảm từ 100% về 90% và Score giảm từ 5.0 về 4.6]**.
+2. **[Repair action: re-clean từ raw records]** → **[Quality checks & Freshness phục hồi về PASS]** → **[Mean Token F1 và Judge metrics phục hồi hoàn toàn]**.
 
 Lỗi `blank_summary` và `add_noise` ảnh hưởng rõ nhất tới vector embeddings vì chúng làm méo mó ngữ cảnh của bài báo trong cơ sở dữ liệu vector.
 
@@ -125,7 +125,7 @@ Lỗi `blank_summary` và `add_noise` ảnh hưởng rõ nhất tới vector emb
 ### Ba điều quan trọng nhất
 1. **Quy trình ETL phải mang tính Deterministic**: Khả năng tái lập lại dữ liệu sạch từ Raw Records là yếu tố sống còn.
 2. **Data Observability là lớp bảo vệ thiết yếu**: Giúp chủ động phát hiện lỗi dữ liệu trước khi đưa câu trả lời đến người dùng.
-3. **Ý nghĩa của Frozen Evaluation Set**: Đóng vai trò làm thước đo chuẩn xác duy nhất cho sự phát triển của hệ thống AI.
+3. **Ý nghĩa của Frozen Evaluation Set & LLM Judge**: Đóng vai trò làm thước đo chuẩn xác duy nhất cho sự phát triển của hệ thống AI.
 
 ### Nếu có thêm thời gian
 Tích hợp thêm bộ thư viện Great Expectations (GX) để tự động hóa hoàn toàn việc kiểm thử schema và liên kết thông báo sự cố qua Webhook.

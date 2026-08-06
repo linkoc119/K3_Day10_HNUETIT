@@ -32,8 +32,9 @@ The system performance was evaluated at each stage against the frozen test set:
 | :--- | :--- | :--- | :--- |
 | **Retrieval Hit Rate** | 90.00% | 90.00% | 90.00% |
 | **Mean Token F1** | 0.9087 | 0.9087 | 0.9087 |
-| **Mean Latency** | 61 ms | 58 ms | 57 ms |
-| **Judge Correct Rate** | N/A | N/A | N/A |
+| **Mean Latency** | 43 ms | 45 ms | 42 ms |
+| **Judge Accuracy** | 100.00% | 90.00% | 90.00% |
+| **Mean Judge Score** | 5.0000 | 4.6000 | 4.6000 |
 
 ## 5. Analysis
 - **Why Hit Rate decreased**:

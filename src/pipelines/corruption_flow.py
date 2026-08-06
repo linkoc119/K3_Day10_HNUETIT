@@ -13,7 +13,7 @@ from core.utils import read_json, write_json
 from ingestion.crossref import fetch_source_records, load_raw_records
 from ingestion.cleaning import build_clean_dataframe
 from ingestion.corruption import corrupt_clean_dataframe
-from evaluation.metrics import calculate_token_f1, LLMJudge
+from evaluation.metrics import run_qa_evaluation
 from retrieval.index import LocalEmbeddingIndex
 from retrieval.qa import answer_question
 from observability.quality import run_data_quality_checks, build_freshness_report
@@ -107,105 +107,20 @@ def run(force: bool = False) -> None:
     test_set_path = Path(settings.paths.eval_testset)
     test_set = read_json(test_set_path)
 
-    # 4. Evaluate Corrupted Index
     print("Running corrupted evaluation")
     logger.info("Running corrupted evaluation")
     
-    indexed_paper_ids = {doc["paper_id"].lower() for doc in corrupted_index.documents}
-    use_llm_judge = os.getenv("USE_LLM_JUDGE", "False").lower() in {"1", "true", "yes"}
+    use_llm_judge = os.getenv("USE_LLM_JUDGE", "True").lower() in {"1", "true", "yes"}
 
-    corrupted_answers = []
-    hits = 0
-    total_token_f1 = 0.0
-    total_latency_ms = 0.0
+    corrupted_answers, corrupted_metrics_data = run_qa_evaluation(
+        settings=settings,
+        index=corrupted_index,
+        test_set=test_set,
+        indexed_paper_ids={doc["paper_id"].lower() for doc in corrupted_index.documents},
+        use_llm_judge=use_llm_judge,
+    )
 
-    judge_correct_count = 0
-    judge_partial_count = 0
-    judge_incorrect_count = 0
-    judge_total_count = 0
-
-    for sample in test_set:
-        q_id = sample.get("id", "unknown")
-        question = sample.get("question", "")
-        ground_truth = sample.get("ground_truth", "")
-        gt_doc_ids = sample.get("ground_truth_doc_ids", [])
-
-        # Check if ground_truth_doc_ids are present in the index
-        gt_present = any(gt_id.lower() in indexed_paper_ids for gt_id in gt_doc_ids)
-        if not gt_present:
-            logger.warning(f"MISS: Ground truth doc IDs {gt_doc_ids} for question {q_id} are not in the index.")
-
-        start_time = time.perf_counter()
-        try:
-            result = answer_question(question, settings, corrupted_index)
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            prediction = result.answer
-            retrieved_ids = result.retrieved_doc_ids
-        except Exception as e:
-            logger.error(f"Error evaluating {q_id} on corrupted index: {e}")
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            prediction = ""
-            retrieved_ids = []
-
-        # Hit rate
-        hit = False
-        if gt_present:
-            hit = len(set(gt_doc_ids) & set(retrieved_ids)) > 0
-        
-        if hit:
-            hits += 1
-
-        f1 = calculate_token_f1(ground_truth, prediction)
-        total_token_f1 += f1
-        total_latency_ms += latency_ms
-
-        answer_item = {
-            "question_id": q_id,
-            "question": question,
-            "prediction": prediction,
-            "ground_truth": ground_truth,
-            "retrieved_doc_ids": retrieved_ids,
-            "hit": hit,
-            "token_f1": round(f1, 4),
-            "latency_ms": latency_ms
-        }
-
-        if not gt_present:
-            answer_item["index_status"] = "MISS"
-
-        if use_llm_judge and prediction:
-            judge_verdict = LLMJudge.evaluate(settings, question, ground_truth, prediction)
-            answer_item["judge"] = judge_verdict
-            judge_total_count += 1
-            if judge_verdict == "Correct":
-                judge_correct_count += 1
-            elif judge_verdict == "Partially Correct":
-                judge_partial_count += 1
-            else:
-                judge_incorrect_count += 1
-
-        corrupted_answers.append(answer_item)
-
-    # Save corrupted answers & metrics
     write_json(Path(settings.paths.corrupted_answers), corrupted_answers)
-
-    num_questions = len(corrupted_answers)
-    retrieval_hit_rate = hits / num_questions if num_questions > 0 else 0.0
-    mean_token_f1 = total_token_f1 / num_questions if num_questions > 0 else 0.0
-    mean_latency_ms = total_latency_ms / num_questions if num_questions > 0 else 0.0
-
-    corrupted_metrics_data = {
-        "num_questions": num_questions,
-        "retrieval_hit_rate": round(retrieval_hit_rate, 4),
-        "mean_token_f1": round(mean_token_f1, 4),
-        "mean_latency_ms": int(mean_latency_ms)
-    }
-
-    if use_llm_judge and judge_total_count > 0:
-        corrupted_metrics_data["correct_rate"] = round(judge_correct_count / judge_total_count, 4)
-        corrupted_metrics_data["partial_rate"] = round(judge_partial_count / judge_total_count, 4)
-        corrupted_metrics_data["incorrect_rate"] = round(judge_incorrect_count / judge_total_count, 4)
-        
     write_json(Path(settings.paths.corrupted_metrics), corrupted_metrics_data)
 
     # Run data quality checks for corrupted
@@ -242,97 +157,15 @@ def run(force: bool = False) -> None:
     print("Running repaired evaluation")
     logger.info("Running repaired evaluation")
 
-    indexed_repaired_ids = {doc["paper_id"].lower() for doc in repaired_index.documents}
+    repaired_answers, repaired_metrics_data = run_qa_evaluation(
+        settings=settings,
+        index=repaired_index,
+        test_set=test_set,
+        indexed_paper_ids={doc["paper_id"].lower() for doc in repaired_index.documents},
+        use_llm_judge=use_llm_judge,
+    )
 
-    repaired_answers = []
-    repaired_hits = 0
-    repaired_total_token_f1 = 0.0
-    repaired_total_latency_ms = 0.0
-
-    repaired_judge_correct_count = 0
-    repaired_judge_partial_count = 0
-    repaired_judge_incorrect_count = 0
-    repaired_judge_total_count = 0
-
-    for sample in test_set:
-        q_id = sample.get("id", "unknown")
-        question = sample.get("question", "")
-        ground_truth = sample.get("ground_truth", "")
-        gt_doc_ids = sample.get("ground_truth_doc_ids", [])
-
-        gt_present = any(gt_id.lower() in indexed_repaired_ids for gt_id in gt_doc_ids)
-        if not gt_present:
-            logger.warning(f"MISS: Ground truth doc IDs {gt_doc_ids} for question {q_id} are not in the index.")
-
-        start_time = time.perf_counter()
-        try:
-            result = answer_question(question, settings, repaired_index)
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            prediction = result.answer
-            retrieved_ids = result.retrieved_doc_ids
-        except Exception as e:
-            logger.error(f"Error evaluating {q_id} on repaired index: {e}")
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            prediction = ""
-            retrieved_ids = []
-
-        hit = False
-        if gt_present:
-            hit = len(set(gt_doc_ids) & set(retrieved_ids)) > 0
-
-        if hit:
-            repaired_hits += 1
-
-        f1 = calculate_token_f1(ground_truth, prediction)
-        repaired_total_token_f1 += f1
-        repaired_total_latency_ms += latency_ms
-
-        answer_item = {
-            "question_id": q_id,
-            "question": question,
-            "prediction": prediction,
-            "ground_truth": ground_truth,
-            "retrieved_doc_ids": retrieved_ids,
-            "hit": hit,
-            "token_f1": round(f1, 4),
-            "latency_ms": latency_ms
-        }
-
-        if not gt_present:
-            answer_item["index_status"] = "MISS"
-
-        if use_llm_judge and prediction:
-            judge_verdict = LLMJudge.evaluate(settings, question, ground_truth, prediction)
-            answer_item["judge"] = judge_verdict
-            repaired_judge_total_count += 1
-            if judge_verdict == "Correct":
-                repaired_judge_correct_count += 1
-            elif judge_verdict == "Partially Correct":
-                repaired_judge_partial_count += 1
-            else:
-                repaired_judge_incorrect_count += 1
-
-        repaired_answers.append(answer_item)
-
-    # Save repaired answers & metrics
     write_json(Path(settings.paths.repaired_answers), repaired_answers)
-
-    repaired_hit_rate = repaired_hits / num_questions if num_questions > 0 else 0.0
-    repaired_mean_token_f1 = repaired_total_token_f1 / num_questions if num_questions > 0 else 0.0
-    repaired_mean_latency_ms = repaired_total_latency_ms / num_questions if num_questions > 0 else 0.0
-
-    repaired_metrics_data = {
-        "num_questions": num_questions,
-        "retrieval_hit_rate": round(repaired_hit_rate, 4),
-        "mean_token_f1": round(repaired_mean_token_f1, 4),
-        "mean_latency_ms": int(repaired_mean_latency_ms)
-    }
-
-    if use_llm_judge and repaired_judge_total_count > 0:
-        repaired_metrics_data["correct_rate"] = round(repaired_judge_correct_count / repaired_judge_total_count, 4)
-        repaired_metrics_data["partial_rate"] = round(repaired_judge_partial_count / repaired_judge_total_count, 4)
-        repaired_metrics_data["incorrect_rate"] = round(repaired_judge_incorrect_count / repaired_judge_total_count, 4)
-        
     write_json(Path(settings.paths.repaired_metrics), repaired_metrics_data)
 
     # Run data quality checks for repaired
@@ -448,7 +281,8 @@ The system performance was evaluated at each stage against the frozen test set:
 | **Retrieval Hit Rate** | {fmt_pct(baseline_metrics.get('retrieval_hit_rate'))} | {fmt_pct(corrupted_metrics.get('retrieval_hit_rate'))} | {fmt_pct(repaired_metrics.get('retrieval_hit_rate'))} |
 | **Mean Token F1** | {fmt_f1(baseline_metrics.get('mean_token_f1'))} | {fmt_f1(corrupted_metrics.get('mean_token_f1'))} | {fmt_f1(repaired_metrics.get('mean_token_f1'))} |
 | **Mean Latency** | {fmt_lat(baseline_metrics.get('mean_latency_ms'))} | {fmt_lat(corrupted_metrics.get('mean_latency_ms'))} | {fmt_lat(repaired_metrics.get('mean_latency_ms'))} |
-| **Judge Correct Rate** | {fmt_pct(baseline_metrics.get('correct_rate', 'N/A'))} | {fmt_pct(corrupted_metrics.get('correct_rate', 'N/A'))} | {fmt_pct(repaired_metrics.get('correct_rate', 'N/A'))} |
+| **Judge Accuracy** | {fmt_pct(baseline_metrics.get('judge_accuracy', baseline_metrics.get('correct_rate', 'N/A')))} | {fmt_pct(corrupted_metrics.get('judge_accuracy', corrupted_metrics.get('correct_rate', 'N/A')))} | {fmt_pct(repaired_metrics.get('judge_accuracy', repaired_metrics.get('correct_rate', 'N/A')))} |
+| **Mean Judge Score** | {fmt_f1(baseline_metrics.get('mean_judge_score', 'N/A'))} | {fmt_f1(corrupted_metrics.get('mean_judge_score', 'N/A'))} | {fmt_f1(repaired_metrics.get('mean_judge_score', 'N/A'))} |
 
 ## 5. Analysis
 - **Why Hit Rate decreased**:

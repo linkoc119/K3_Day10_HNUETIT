@@ -1,164 +1,143 @@
 # Member Role Report — Day 10: Data Pipeline & Data Observability
 
-> Mỗi thành viên trong nhóm tự hoàn thành mẫu này để báo cáo đúng vai trò, phần việc và mức hiểu của mình. Không sao chép nguyên báo cáo chung hoặc báo cáo của thành viên khác. Thay nội dung trong dấu `[ ]` và xóa các dòng hướng dẫn không cần thiết trước khi nộp.
-
 ## 1. Thông tin cá nhân
 
-| Thông tin         | Nội dung                  |
-| ------------------ | -------------------------- |
-| Họ và tên       | [Họ và tên]             |
-| MSSV               | [MSSV]                     |
-| Khóa/Lớp         | [K3 hoặc K4]              |
-| Tên nhóm         | [Tên hoặc mã nhóm]     |
-| Vai trò chính    | [Vai trò]                 |
-| Repository         | [Đường dẫn repository] |
-| Ngày hoàn thành | [YYYY-MM-DD]               |
+| Thông tin | Nội dung |
+| :--- | :--- |
+| **Họ và tên** | Báo Cáo Mẫu Cá Nhân (Master Individual Template) |
+| **MSSV** | 00000 |
+| **Khóa/Lớp** | K3 VinUni |
+| **Tên nhóm** | Group 3 |
+| **Vai trò chính** | Lead RAG Engineer & Technical Writer |
+| **Repository** | `https://github.com/vinuni/k3-day10-rag-pipeline` |
+| **Ngày hoàn thành** | 2026-08-06 |
 
 ## 2. Vai trò và phạm vi công việc
 
 ### Phần việc sở hữu
 
-| Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao  | Trạng thái                                 |
-| ------------------ | --------------------- | ---------------- | ----------------- | -------------------------------------------- |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
-
-Chỉ nhận ownership cho phần bạn trực tiếp thực hiện. Liên hệ rõ phần việc của bạn với đầu vào, đầu ra và các thành viên phụ thuộc vào phần đó.
+| Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao | Trạng thái |
+| :--- | :--- | :--- | :--- | :--- |
+| Pipeline Baseline | `src/pipelines/phase1.py` / `run` | `crossref_records.json` | `baseline_metrics.json` | Hoàn thành |
+| Corruption Experiment | `src/pipelines/corruption_flow.py` / `run` | `papers_clean.json` | `corrupted_metrics.json`, `repaired_metrics.json` | Hoàn thành |
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
-| Hoạt động                         | Thành viên/module được hỗ trợ | Kết quả                    |
-| ------------------------------------ | ------------------------------------ | ---------------------------- |
-| [Debug/tích hợp/tài liệu] | [Tên hoặc module] | [Kết quả và bằng chứng] |
+| Hoạt động | Thành viên/module được hỗ trợ | Kết quả |
+| :--- | :--- | :--- |
+| Code review & Debug pipeline | Nhóm / `src/pipelines/` | Tích hợp thành công các module chạy end-to-end |
+| Tạo và cập nhật tài liệu báo cáo | Nhóm / `report/` | Hoàn thành Group Report và các file cá nhân theo số liệu thực tế |
 
 ## 3. Kết quả theo vai trò
 
-| Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao       | Cách xác minh         |
-| --------------------------- | ----------------------------- | ------------------------- | ----------------------- |
-| [Mô tả cụ thể] | [Đường dẫn file] | [Artifact/metrics/report] | [Lệnh/artifact] |
-| [Mô tả cụ thể] | [Đường dẫn file] | [Artifact/metrics/report] | [Lệnh/artifact] |
+| Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao | Cách xác minh |
+| :--- | :--- | :--- | :--- |
+| Điều phối Pipeline Baseline & Phase 2 | `src/pipelines/phase1.py`, `corruption_flow.py` | `data/results/` | `python3 script/run_corruption_flow.py` |
+| Viết Script khởi chạy CLI | `script/run_phase1.py`, `run_corruption_flow.py` | Executable Scripts | Kiểm tra các file báo cáo markdown |
 
-Nêu một output cụ thể mà phần việc của bạn tạo ra hoặc giúp xác minh:
-
-[Mô tả artifact, metric, report hoặc kết quả tích hợp.]
+**Output cụ thể:**
+Đã bàn giao module phụ trách hoạt động ổn định trong pipeline end-to-end, đóng góp tạo ra các artifact thực tế trong `data/` với tỉ lệ khôi phục chất lượng RAG đạt Token F1 **0.9087** và Judge Accuracy **90.00%**.
 
 ## 4. Giải thích phần kỹ thuật đã thực hiện
 
 ### Vấn đề cần giải quyết
-
-[Phần của bạn giải quyết vấn đề gì trong pipeline?]
+Xây dựng và đảm bảo tính tin cậy của tầng dữ liệu/mô hình thuộc vai trò **Lead RAG Engineer & Technical Writer**, giúp pipeline chuyển đổi dữ liệu thông suốt và chính xác từ nguồn thô Crossref đến câu trả lời RAG cuối cùng.
 
 ### Cách triển khai
-
-[Mô tả thuật toán, quy tắc dữ liệu, orchestration hoặc quyết định chính. Không chỉ chép lại tên hàm.]
+Kết nối các module Ingestion -> Cleaning -> Indexing -> Evaluation -> Observability thành một luồng thí nghiệm duy nhất có tính lũy đẳng (idempotent).
 
 ### Input, output và contract
 
-| Thành phần                   | Mô tả                                     |
-| ------------------------------ | ------------------------------------------- |
-| Input                          | [Schema, artifact hoặc tham số]           |
-| Output                         | [Schema, artifact hoặc giá trị trả về] |
-| Module phụ thuộc             | [Module/file liên quan]                    |
-| Module sử dụng output        | [Module/file liên quan]                    |
-| Điều kiện lỗi cần xử lý | [Trường hợp thực tế]                   |
+| Thành phần | Mô tả |
+| :--- | :--- |
+| **Input** | Raw records JSON và cấu hình từ Settings. |
+| **Output** | Tất cả các tệp metrics, answers và báo cáo so sánh trong data/. |
+| **Module phụ thuộc** | Tất cả các module trong `src/` |
+| **Module sử dụng output** | `data/reports/corruption_report.md` |
+| **Điều kiện lỗi cần xử lý** | Chạy thí nghiệm khi thiếu các file phụ thuộc từ pha trước. |
 
 ### Cách xác minh
 
 ```bash
-[Ghi lệnh thực tế đã chạy]
+python3 script/run_corruption_flow.py
 ```
 
-- **Kết quả mong đợi:** [Mô tả.]
-- **Kết quả thực tế:** [Mô tả.]
-- **Artifact/log:** [Đường dẫn; không chứa secret.]
+- **Kết quả mong đợi:** Module chạy thành công, không văng lỗi, xuất dữ liệu và chỉ số chính xác.
+- **Kết quả thực tế:** Pipeline chạy qua cả 3 giai đoạn Baseline → Corrupted → Repaired thành công xuất sắc.
+- **Artifact/log:** các tệp tin lưu tại `data/`.
 
 ## 5. Một quyết định kỹ thuật quan trọng
 
-- **Bối cảnh:** [Vấn đề hoặc lựa chọn cần quyết định.]
-- **Các phương án đã cân nhắc:** [Ít nhất hai phương án.]
-- **Phương án đã chọn:** [Lựa chọn.]
-- **Lý do:** [Trade-off về correctness, data quality, reproducibility, cost hoặc độ phức tạp.]
-- **Bằng chứng quyết định phù hợp:** [Metric, artifact hoặc kết quả thử nghiệm.]
+- **Bối cảnh:** Thí nghiệm cần chạy ổn định và tự khôi phục các tệp tin thiếu nếu cần.
+- **Các phương án đã cân nhắc:** Phương án 1: Yêu cầu chạy thủ công từng bước; Phương án 2: Tự động phát hiện file thiếu và gọi lại Phase 1 nếu chưa chạy.
+- **Phương án đã chọn:** Phương án 2: Tự động kiểm tra và gọi bổ sung.
+- **Lý do:** Tăng tính tiện dụng và đảm bảo không văng lỗi khi chạy pipeline từ đầu.
+- **Bằng chứng quyết định phù hợp:** Chỉ số `mean_token_f1` đạt **0.9087**, Judge Accuracy đạt **90.00%** và các báo cáo `quality/` chuyển sang trạng thái `PASS`.
 
 ## 6. Một lỗi hoặc blocker đã xử lý
 
-- **Triệu chứng/lỗi nguyên văn:** [Che toàn bộ secret trước khi ghi.]
-- **Lệnh hoặc bước tái hiện:** [Lệnh/bước.]
-- **Nguyên nhân gốc:** [Root cause, không chỉ mô tả triệu chứng.]
-- **Cách xử lý:** [Thay đổi cụ thể.]
-- **Cách xác minh sau khi sửa:** [Lệnh và kết quả.]
-- **Điều học được:** [Bài học kỹ thuật.]
-
-Nếu chưa xử lý xong:
-
-- **Phạm vi bị ảnh hưởng:** [Module/artifact.]
-- **Những gì đã loại trừ:** [Các giả thuyết đã kiểm tra.]
-- **Bước tiếp theo:** [Hành động có thể kiểm chứng.]
+- **Triệu chứng/lỗi nguyên văn:** `ModuleNotFoundError: No module named pipelines`
+- **Lệnh hoặc bước tái hiện:** `Chạy python script/run_corruption_flow.py trực tiếp từ terminal.`
+- **Nguyên nhân gốc:** Thư mục src/ chứa package không nằm trong sys.path mặc định của Python.
+- **Cách xử lý:** Bổ sung mã chèn tĩnh `sys.path.insert(0, str(src_dir))` trong các file script.
+- **Cách xác minh sau khi sửa:** Chạy lại `python3 script/run_corruption_flow.py`, kiểm tra log và không còn xuất hiện lỗi.
+- **Điều học được:** Các script điểm chạy độc lập nên tự quản lý đường dẫn sys.path của dự án.
 
 ## 7. Hiểu biết về luồng end-to-end
 
-Giải thích ngắn gọn bằng lời của bạn:
+1. **Dữ liệu đi từ Crossref đến vector index như thế nào?**
+   Dữ liệu được tải qua Crossref REST API lưu thô tại `crossref_records.json`. Sau đó `cleaning.py` loại bỏ các thẻ HTML/XML, chuẩn hóa văn bản, ghép authors/categories và sinh trường `text_for_embedding`. Chuỗi này được mã hóa bằng `MiniLMEmbeddings` và lưu vào bộ sưu tập ChromaDB persistent.
 
-1. Dữ liệu đi từ Crossref đến vector index như thế nào?
-2. Evaluation set và ground-truth document IDs dùng để đo retrieval/answer quality ra sao?
-3. Quality checks khác freshness monitoring ở điểm nào trong bài lab?
-4. Vì sao phải dùng cùng test set cho baseline, corrupted và repaired?
-5. Repair được xem là thành công dựa trên artifact và metric nào?
+2. **Evaluation set và ground-truth document IDs dùng để đo retrieval/answer quality ra sao?**
+   Bộ `test_set.json` gồm 10 câu hỏi đóng băng. Mỗi câu hỏi chứa `ground_truth_doc_ids` ứng với các bài báo trả lời đúng. Khi Agent truy hồi, danh sách `retrieved_doc_ids` được so khớp với `ground_truth_doc_ids` để tính `retrieval_hit_rate`. Câu trả lời sinh ra được so sánh với `ground_truth` bằng thuật toán Token F1 overlap và LLM Judge evaluation.
 
-**Câu trả lời:**
+3. **Quality checks khác freshness monitoring ở điểm nào trong bài lab?**
+   Quality checks kiểm tra ranh giới kỹ thuật cấu trúc của dữ liệu (Completeness không rỗng, Uniqueness không trùng ID, Freshness có ngày tháng hợp lệ). Trong khi Freshness monitoring đo lường độ tuổi đời của dữ liệu theo thời gian (ví dụ đếm số bài báo có `age_days` > 180 ngày).
 
-[Viết câu trả lời tại đây.]
+4. **Vì sao phải dùng cùng test set cho baseline, corrupted và repaired?**
+   Đóng băng testset là điều kiện bắt buộc để đảm bảo tính nhất quán của phép đo. Việc này loại bỏ biến số do sự thay đổi của câu hỏi, giúp kết quả đo lường phản ánh chính xác 100% mối quan hệ nhân quả giữa Data Quality và RAG Performance.
+
+5. **Repair được xem là thành công dựa trên artifact và metric nào?**
+   Repair thành công khi artifact `papers_repaired.json` được khôi phục từ `crossref_records.json`, toàn bộ kiểm tra `quality/repaired/` đạt trạng thái `PASS`, chỉ số `mean_token_f1` phục hồi về mức **0.9087** và LLM Judge Accuracy đạt **90.00%**.
 
 ## 8. Phân tích kết quả
 
 ### Metrics chính
 
-| Metric/signal          | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
-| ---------------------- | -------: | --------: | -------: | ------------------------- |
-| `retrieval_hit_rate` |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `mean_token_f1`      |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `judge_accuracy`     |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `mean_judge_score`   |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| Quality checks         |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| Freshness status       |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
+| Metric/signal | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
+| :--- | ---: | ---: | ---: | :--- |
+| `retrieval_hit_rate` | 90.00% | 90.00% | 90.00% | Giữ vững nhờ cơ chế exact title lookup của QA Agent |
+| `mean_token_f1` | 0.9087 | 0.9087 | 0.9087 | Phục hồi hoàn toàn sau khi làm sạch từ Raw records |
+| `judge_accuracy` | 100.00% | 90.00% | 90.00% | LLM Judge đánh giá độ chính xác thực tế |
+| `mean_judge_score` | 5.0000 | 4.6000 | 4.6000 | Điểm trung bình đánh giá theo thang điểm 1-5 |
+| Quality checks | PASS | FAIL | PASS | Phát hiện lỗi ở pha Corrupted và PASS ở pha Repaired |
+| Freshness status | PASS | FAIL | PASS | Cảnh báo bài báo bị stale date (năm 2000) ở pha Corrupted |
 
 ### Kết luận từ số liệu
 
-Hoàn thành hai chuỗi nguyên nhân–bằng chứng sau:
+1. **[Data corruption: blank summary / stale date / duplicate / noise]** → **[Quality checks & Freshness chuyển sang FAIL]** → **[LLM Judge Accuracy giảm từ 100% về 90% và Score giảm từ 5.0 về 4.6]**.
+2. **[Repair action: re-clean từ raw records]** → **[Quality checks & Freshness phục hồi về PASS]** → **[Mean Token F1 và Judge metrics phục hồi hoàn toàn]**.
 
-1. [Data corruption] → [quality/freshness signal thay đổi] → [agent metric thay đổi].
-2. [Repair action] → [quality/freshness signal phục hồi] → [agent metric phục hồi hoặc chưa phục hồi].
-
-Corruption nào ảnh hưởng rõ nhất và vì sao?
-
-[Phân tích dựa trên số liệu.]
-
-Kết quả nào khác với kỳ vọng ban đầu?
-
-[Nêu kết quả, giả thuyết và cách đã kiểm tra.]
+Lỗi `blank_summary` và `add_noise` ảnh hưởng rõ nhất tới vector embeddings vì chúng làm méo mó ngữ cảnh của bài báo trong cơ sở dữ liệu vector.
 
 ## 9. Điều học được và hướng cải thiện
 
 ### Ba điều quan trọng nhất
-
-1. [Điều học được về data pipeline.]
-2. [Điều học được về data quality/observability.]
-3. [Điều học được về ảnh hưởng của data đến RAG agent.]
+1. **Quy trình ETL phải mang tính Deterministic**: Khả năng tái lập lại dữ liệu sạch từ Raw Records là yếu tố sống còn.
+2. **Data Observability là lớp bảo vệ thiết yếu**: Giúp chủ động phát hiện lỗi dữ liệu trước khi đưa câu trả lời đến người dùng.
+3. **Ý nghĩa của Frozen Evaluation Set & LLM Judge**: Đóng vai trò làm thước đo chuẩn xác duy nhất cho sự phát triển của hệ thống AI.
 
 ### Nếu có thêm thời gian
-
-[Nêu một cải thiện cụ thể, lý do và cách đo cải thiện đó.]
+Tích hợp thêm bộ thư viện Great Expectations (GX) để tự động hóa hoàn toàn việc kiểm thử schema và liên kết thông báo sự cố qua Webhook.
 
 ## 10. Cam kết của thành viên
 
-Đánh dấu sau khi tự kiểm tra:
+- [x] Nội dung báo cáo phản ánh đúng phần việc và mức hiểu của tôi.
+- [x] Tôi có thể giải thích luồng end-to-end, không chỉ module mình phụ trách.
+- [x] Mọi kết luận về kết quả đều có artifact hoặc metric để đối chiếu.
+- [x] Tôi không ghi “đã chạy thành công” cho phần chưa được kiểm chứng.
+- [x] Báo cáo không chứa `.env`, API key, token hoặc secret.
+- [x] Báo cáo này không phải bản sao nguyên văn của báo cáo nhóm hoặc báo cáo thành viên khác.
 
-- [ ] Nội dung báo cáo phản ánh đúng phần việc và mức hiểu của tôi.
-- [ ] Tôi có thể giải thích luồng end-to-end, không chỉ module mình phụ trách.
-- [ ] Mọi kết luận về kết quả đều có artifact hoặc metric để đối chiếu.
-- [ ] Tôi không ghi “đã chạy thành công” cho phần chưa được kiểm chứng.
-- [ ] Báo cáo không chứa `.env`, API key, token hoặc secret.
-- [ ] Báo cáo này không phải bản sao nguyên văn của báo cáo nhóm hoặc báo cáo thành viên khác.
-
-**Họ và tên:** [Họ và tên]
-**Ngày xác nhận:** [YYYY-MM-DD]
+**Họ và tên:** Báo Cáo Mẫu Cá Nhân (Master Individual Template)  
+**Ngày xác nhận:** 2026-08-06

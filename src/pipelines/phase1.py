@@ -110,96 +110,18 @@ def run(force: bool = False) -> None:
     logger.info("Loaded frozen test set")
 
     # Step 5: QA Evaluation
-    use_llm_judge = os.getenv("USE_LLM_JUDGE", "False").lower() in {"1", "true", "yes"}
-    answers = []
-    
-    total_questions = len(test_set)
-    hits = 0
-    total_token_f1 = 0.0
-    total_latency_ms = 0.0
-    
-    judge_correct_count = 0
-    judge_partial_count = 0
-    judge_incorrect_count = 0
-    judge_total_count = 0
+    from evaluation.metrics import run_qa_evaluation
+    use_llm_judge = os.getenv("USE_LLM_JUDGE", "True").lower() in {"1", "true", "yes"}
+    answers, metrics = run_qa_evaluation(
+        settings=settings,
+        index=index,
+        test_set=test_set,
+        use_llm_judge=use_llm_judge,
+    )
 
-    for sample in test_set:
-        q_id = sample.get("id", "unknown")
-        question = sample.get("question", "")
-        ground_truth = sample.get("ground_truth", "")
-        gt_doc_ids = sample.get("ground_truth_doc_ids", [])
-        
-        logger.info(f"Evaluating {q_id}")
-        
-        try:
-            start_time = time.perf_counter()
-            result = answer_question(question, settings, index)
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            
-            # Prediction from RAG
-            prediction = result.answer
-            retrieved_ids = result.retrieved_doc_ids
-            
-            # Hit rate
-            hit = len(set(gt_doc_ids) & set(retrieved_ids)) > 0
-            if hit:
-                hits += 1
-                
-            # Token F1
-            f1 = calculate_token_f1(ground_truth, prediction)
-            total_token_f1 += f1
-            total_latency_ms += latency_ms
-            
-            answer_item = {
-                "question_id": q_id,
-                "question": question,
-                "prediction": prediction,
-                "ground_truth": ground_truth,
-                "retrieved_doc_ids": retrieved_ids,
-                "hit": hit,
-                "token_f1": round(f1, 4),
-                "latency_ms": latency_ms
-            }
-            
-            if use_llm_judge:
-                judge_verdict = LLMJudge.evaluate(settings, question, ground_truth, prediction)
-                answer_item["judge"] = judge_verdict
-                judge_total_count += 1
-                if judge_verdict == "Correct":
-                    judge_correct_count += 1
-                elif judge_verdict == "Partially Correct":
-                    judge_partial_count += 1
-                else:
-                    judge_incorrect_count += 1
-                    
-            answers.append(answer_item)
-            
-        except Exception as e:
-            logger.error(f"Failed evaluating {q_id}: {e}")
-            # Do not stop the pipeline, keep going
-
-    # Save Answers
     answers_output_path = Path(settings.paths.baseline_answers)
     answers_output_path.parent.mkdir(parents=True, exist_ok=True)
     write_json(answers_output_path, answers)
-    
-    # Calculate metrics
-    num_questions = len(answers)
-    retrieval_hit_rate = hits / num_questions if num_questions > 0 else 0.0
-    mean_token_f1 = total_token_f1 / num_questions if num_questions > 0 else 0.0
-    mean_latency_ms = total_latency_ms / num_questions if num_questions > 0 else 0.0
-    
-    metrics = {
-        "num_questions": num_questions,
-        "retrieval_hit_rate": round(retrieval_hit_rate, 4),
-        "mean_token_f1": round(mean_token_f1, 4),
-        "mean_latency_ms": int(mean_latency_ms)
-    }
-    
-    if use_llm_judge and judge_total_count > 0:
-        metrics["correct_rate"] = round(judge_correct_count / judge_total_count, 4)
-        metrics["partial_rate"] = round(judge_partial_count / judge_total_count, 4)
-        metrics["incorrect_rate"] = round(judge_incorrect_count / judge_total_count, 4)
 
     metrics_output_path = Path(settings.paths.baseline_metrics)
     write_json(metrics_output_path, metrics)

@@ -17,7 +17,12 @@
 ## QA Performance
 
 * **Mean Token F1:** 0.91
-* **Mean Latency:** 61.0 ms
+* **Mean Latency:** 43.0 ms
+
+## LLM Judge
+
+* **Correct Rate:** 100.0%
+* **Mean Judge Score:** 5.00 / 5.0
 
 ## Data Quality checks
 
