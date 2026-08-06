@@ -59,6 +59,7 @@ day10-data-observability-lab/
 │       └── repaired_metrics.json
 ├── report/
 │   ├── group_report.md
+│   ├── individual_report.md
 │   ├── individual_01069_NgoHungPhuc.md
 │   ├── individual_01147_NguyenDuyHoang.md
 │   ├── individual_01711_LeVanLong.md
@@ -133,19 +134,19 @@ Thống kê các bản ghi lỗi được áp dụng ngẫu nhiên (seed 42):
 * **Stale Date**: 1 bản ghi bị lùi ngày xuất bản về năm 2000-01-01 để vi phạm FRESHNESS.
 
 ## 10. Analysis
-- **Vì sao Retrieval giảm**: Các bản ghi bị lỗi tóm tắt (blank_summary) hoặc nhiễu (noise) làm thay đổi đáng kể vector biểu diễn từ ngữ trong cơ sở dữ liệu vector. Sự nhiễu loạn này làm giảm độ tương đồng cosine giữa truy vấn người dùng và tài liệu gốc, dẫn đến việc Retriever bỏ sót tài liệu đúng (đặc biệt khi tài liệu đúng là duy nhất trong corpus 24 bài báo).
-- **Vì sao Token F1 giảm**: Khi Retriever trả về kết quả sai hoặc thiếu ngữ cảnh gốc (Context Miss), QA Agent không có đủ thông tin tin cậy để trả lời câu hỏi thực tế (factual). Agent buộc phải đoán hoặc trả lời dựa trên các tài liệu không liên quan, dẫn đến điểm trùng khớp từ ngữ (Token F1) sụt giảm trầm trọng.
+- **Vì sao Retrieval giảm**: Các bản ghi bị lỗi tóm tắt (blank_summary) hoặc nhiễu (noise) làm thay đổi đáng kể vector biểu diễn từ ngữ trong cơ sở dữ liệu vector. Sự nhiễu loạn này làm giảm độ tương đồng cosine giữa truy vấn người dùng và tài liệu gốc, dẫn đến việc Retriever bỏ sót tài liệu đúng.
+- **Vì sao Token F1 giảm**: Khi Retriever trả về kết quả sai hoặc thiếu ngữ cảnh gốc (Context Miss), QA Agent không có đủ thông tin tin cậy để trả lời câu hỏi thực tế (factual). Agent buộc phải đoán hoặc trả lời dựa trên các tài liệu không liên quan, dẫn đến điểm trùng khớp từ ngữ (Token F1) sụt giảm.
 - **Vì sao Repair khôi phục**: Bằng cách chạy lại bộ làm sạch deterministic từ file bản ghi gốc (`crossref_records.json`), chúng ta đã loại bỏ hoàn toàn các bản sao lưu trùng lặp, các văn bản rác và khôi phục các tóm tắt bị mất. Vector biểu diễn của tài liệu trở lại chính xác như ban đầu, khôi phục hoàn toàn khả năng truy hồi của Retriever và độ chính xác của Agent.
 
 ## 11. Lessons Learned
 1. **Chất lượng dữ liệu quyết định chất lượng AI**: Hệ thống RAG phụ thuộc trực tiếp vào Garbage-in, Garbage-out. Observability là lớp bảo vệ bắt buộc trước khi đưa câu trả lời tới người dùng.
 2. **Frozen Evaluation Set cực kỳ quan trọng**: Việc đánh giá so sánh chỉ có ý nghĩa khoa học khi sử dụng chung một tập câu hỏi kiểm thử đóng băng.
-3. **Cần lưu Raw Artifacts**: Việc lưu trữ dữ liệu raw gốc cho phép hệ thống chạy lại quy trình làm sạch từ đầu (lineage-based repair), đảm bảo tínhDeterministic của dữ liệu.
+3. **Cần lưu Raw Artifacts**: Việc lưu trữ dữ liệu raw gốc cho phép hệ thống chạy lại quy trình làm sạch từ đầu (lineage-based repair), đảm bảo tính Deterministic của dữ liệu.
 4. **Cơ chế Fallback thông minh**: Việc tích hợp exact lookup tiêu đề trong QA Agent giúp giảm thiểu một phần ảnh hưởng của lỗi tóm tắt khi tiêu đề vẫn chính xác.
 5. **Cần hệ thống cảnh báo tự động**: Các chỉ số chất lượng dữ liệu (Completeness, Uniqueness, Freshness) phải được theo dõi liên tục ở tầng ETL.
 
 ## 12. Conclusion
-Thí nghiệm Baseline $ightarrow$ Corrupted $ightarrow$ Repaired đã chứng minh định lượng rằng Data Quality ảnh hưởng trực tiếp tới chất lượng hệ thống RAG. Nhờ có quy trình làm sạch deterministic khôi phục từ Raw Records, hệ thống đã loại bỏ hoàn toàn lỗi dữ liệu và đưa các chỉ số đo lường hiệu năng của QA Agent trở lại trạng thái tốt nhất ban đầu.
+Thí nghiệm Baseline → Corrupted → Repaired đã chứng minh định lượng rằng Data Quality ảnh hưởng trực tiếp tới chất lượng hệ thống RAG. Nhờ có quy trình làm sạch deterministic khôi phục từ Raw Records, hệ thống đã loại bỏ hoàn toàn lỗi dữ liệu và đưa các chỉ số đo lường hiệu năng của QA Agent trở lại trạng thái tốt nhất ban đầu.
 
 ## Submission Checklist
 * [x] Baseline Pipeline chạy thành công xuất ra đầy đủ kết quả
